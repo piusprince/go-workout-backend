@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"go-beginner/internal/api"
 	"go-beginner/internal/store"
+	"go-beginner/migrations"
 	"log"
 	"net/http"
 	"os"
@@ -21,11 +22,18 @@ func NewApplication() (*Application, error) {
 		return nil, err
 	}
 
+	err = store.MigrateFS(pgDb, migrations.FS, ".")
+	if err != nil {
+		panic(err)
+	}
+
 	logger := log.New(os.Stdout, "INFO: ", log.Ldate|log.Ltime)
+
+	workoutStore := store.NewPostgresWorkoutStore(pgDb)
 
 	app := &Application{
 		Logger:         logger,
-		WorkoutHandler: api.NewWorkoutHandler(),
+		WorkoutHandler: api.NewWorkoutHandler(workoutStore),
 		Db:             pgDb,
 	}
 
